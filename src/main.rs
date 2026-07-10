@@ -33,14 +33,18 @@ fn main() -> io::Result<()> {
     loop {
         terminal.draw(|frame| {
             let area = frame.area();
-            let swatch_color = Color::Rgb(255, 136, 0);
-            let block = Block::bordered().style(Style::default().bg(swatch_color));
+            // Match background color of terminal by not setting a color
+            let block = Block::bordered();
             frame.render_widget(block, area);
         })?;
 
         if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                break;
+            match key.kind {
+                KeyEventKind::Press => match key.code {
+                    KeyCode::Char('q') | KeyCode::Esc => break,
+                    _ => {}
+                },
+                _ => {}
             }
         }
     }
