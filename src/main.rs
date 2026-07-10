@@ -7,13 +7,11 @@ use ratatui::{
     backend::CrosstermBackend,
     crossterm::{
         event::{self, Event, KeyCode, KeyEventKind},
-        terminal::{disable_raw_mode, enable_raw_mode},
+        terminal::{self, disable_raw_mode, enable_raw_mode},
     },
     style::{Color, Style},
     widgets::Block,
 };
-
-const HEIGHT: u16 = 8;
 
 // Runs in alternate screen for fullscreen TUI experience
 fn run_fullscreen() -> io::Result<()> {
@@ -43,7 +41,11 @@ fn run_fullscreen() -> io::Result<()> {
 }
 
 // Runs in primary screen for an inline experience
-fn run_inline() -> io::Result<()> {
+fn run_inline(height_percent: u8) -> io::Result<()> {
+    // Get user's terminal size
+    let (_width, mut height) = terminal::size()?;
+    height = height * u16::from(height_percent) / 100;
+
     std::panic::set_hook(Box::new(|info| {
         let _ = disable_raw_mode();
         eprintln!("{info}");
@@ -54,7 +56,7 @@ fn run_inline() -> io::Result<()> {
     let mut terminal = Terminal::with_options(
         backend,
         TerminalOptions {
-            viewport: Viewport::Inline(HEIGHT),
+            viewport: Viewport::Inline(height),
         },
     )?;
 
@@ -84,9 +86,9 @@ fn run_inline() -> io::Result<()> {
 
 fn main() -> io::Result<()> {
     // HACK: this will be a flag or something at some point to decide between alt or primary screen
-    let height: Option<u8> = Some(0);
+    let height: Option<u8> = None;
     match height {
-        Some(h) if 0 < h && h < 100 => run_inline(),
-        _ => run_fullscreen(),
+        Some(h) => run_inline(h),
+        None => run_fullscreen(),
     }
 }
